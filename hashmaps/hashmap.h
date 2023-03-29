@@ -16,14 +16,14 @@ public:
     {
         this->key = key;
         this->value = value;
-        next = NULL:
+        next = NULL;
     }
+
     ~MapNode()
     {
         delete next;
     }
 };
-
 
 // hashmap class def //----------------------------------------------
 template <typename V>
@@ -41,7 +41,7 @@ public:
         buckets = new MapNode<V> *[numBuckets];
         for (int i = 0; i < numBuckets; i++)
         {
-            buckets[i] = NULL:
+            buckets[i] = NULL;
         }
     }
     ~Map()
@@ -77,7 +77,7 @@ private:
         int hashcode = 0;
 
         int currentCoeff = 1;
-        for (i = key.length() - 1; i >= 0; i--)
+        for (int i = key.length() - 1; i >= 0; i--)
         {
             hashcode += key[i] * currentCoeff;
             hashcode = hashcode % numBuckets;
@@ -88,10 +88,43 @@ private:
         return hashcode % numBuckets;
     }
 
+    void rehash()
+    {
+        MapNode<V> **temp = buckets;
+        buckets = new MapNode<V> *[2 * numBuckets];
+        for (int i = 0; i < 2 * numBuckets; i++)
+        {
+            buckets[i] = NULL;
+        }
+        int oldBucketCount = numBuckets;
+        numBuckets *= 2;
+        count = 0;
+        for (int i = 0; i < oldBucketCount; i++)
+        {
+            MapNode<V> *head = temp[i];
+            while (head != NULL)
+            {
+                string key = head->key;
+                V value = head->value;
+                insert(key, value);
+                head = head->next;
+            }
+        }
+        for (int i = 0; i < oldBucketCount; i++)
+        {
+            MapNode<V> *head = temp[i];
+            delete head;
+        }
+        delete[] temp;
+    }
+
 public:
+    double getLoadFactor(){
+        return (1.0*count)/numBuckets;
+    }
     void insert(string key, V value)
     {
-        int bucketIndex = getBucketIndex(string key);
+        int bucketIndex = getBucketIndex(key);
         MapNode<V> *head = buckets[bucketIndex];
         while (head != NULL)
         {
@@ -107,6 +140,11 @@ public:
         node->next = head;
         buckets[bucketIndex] = node;
         count++;
+        double loadFactor = (1.0 * count) / numBuckets;
+        if (loadFactor > 0.7)
+        {
+            rehash();
+        }
     }
     V remove(string key)
     {
@@ -125,12 +163,13 @@ public:
                 {
                     prev->next = head->next;
                 }
+                V value = head->value;
                 head->next = NULL;
                 delete head;
                 count--;
                 return value;
             }
-            V value = head->value;
+            // V value = head->value;
             prev = head;
             head = head->next;
         }
